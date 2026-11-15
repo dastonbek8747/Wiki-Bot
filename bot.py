@@ -2,6 +2,7 @@ from config import bot_token
 from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 import asyncio
+import logging
 from aiogram.filters import Command
 import wikipedia
 
@@ -29,8 +30,16 @@ async def send_welcome(message: Message):
 async def wiki(message: Message):
     try:
         await message.reply(wikipedia.summary(message.text))
-    except:
-        await message.answer(f"' {message.text} '  Bunday nomli maqola topilmadi !")
+    except wikipedia.exceptions.DisambiguationError as exc:
+        options = "\n".join(f"• {opt}" for opt in exc.options[:5])
+        await message.answer(
+            f"'{message.text}' nomi bir nechta maqolaga mos keladi. Aniqlashtiring:\n{options}"
+        )
+    except wikipedia.exceptions.PageError:
+        await message.answer(f"'{message.text}' nomli maqola topilmadi.")
+    except Exception as exc:
+        logging.exception("Wikipedia so'rovida xato: %s", exc)
+        await message.answer("Xatolik yuz berdi. Keyinroq qayta urinib ko'ring.")
 
 
 if __name__ == "__main__":
